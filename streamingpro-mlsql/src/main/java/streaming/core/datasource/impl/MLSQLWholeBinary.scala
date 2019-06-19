@@ -6,7 +6,9 @@ import streaming.dsl.ScriptSQLExec
 import streaming.dsl.mmlib.algs.param.{BaseParams, WowParams}
 
 /**
-  * 2019-03-20 WilliamZhu(allwefantasy@gmail.com)
+  * 2019-06-19 weicm
+  * Whole binary datasource can load hdfs file as a table with two columns(path:string, content:binary), but don't support save!
+  * mlsql eg: load wholeBinary./tmp/test/ as output;
   */
 class MLSQLWholeBinary(override val uid: String) extends MLSQLBaseFileSource with WowParams {
   def this() = this(BaseParams.randomUID())
