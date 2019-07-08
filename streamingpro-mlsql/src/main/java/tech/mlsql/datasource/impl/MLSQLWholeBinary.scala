@@ -1,13 +1,14 @@
-package streaming.core.datasource.impl
+package tech.mlsql.datasource.impl
 
-import org.apache.spark.sql.{DataFrame, DataFrameReader, DataFrameWriter, Row}
-import streaming.core.datasource._
-import streaming.dsl.ScriptSQLExec
-import streaming.dsl.mmlib.algs.param.{BaseParams, WowParams}
+import _root_.streaming.core.datasource._
+import _root_.streaming.dsl.ScriptSQLExec
+import _root_.streaming.dsl.mmlib.algs.param.{BaseParams, WowParams}
+import org.apache.spark.ml.param.Param
+import org.apache.spark.sql._
 
 /**
   * 2019-06-19 weicm
-  * Whole binary datasource can load hdfs file as a table with two columns(path:string, content:binary), but don't support save!
+  * Whole binary datasource can load hdfs files as a table with two columns(path:string, content:binary) and save table as hdfs files!
   * mlsql eg: load wholeBinary./tmp/test/ as output;
   */
 class MLSQLWholeBinary(override val uid: String) extends MLSQLBaseFileSource with WowParams {
@@ -25,7 +26,10 @@ class MLSQLWholeBinary(override val uid: String) extends MLSQLBaseFileSource wit
   }
 
   override def save(writer: DataFrameWriter[Row], config: DataSinkConfig): Unit = {
-    throw new RuntimeException("wholeBinary not support save")
+    val context = ScriptSQLExec.contextGetOrForTest()
+    val baseDir = resourceRealPath(context.execListener, Option(context.owner), config.path)
+    val format = config.config.getOrElse("implClass", fullFormat)
+    writer.options(rewriteConfig(config.config)).mode(config.mode).format(format).save(baseDir)
   }
 
   override def sourceInfo(config: DataAuthConfig): SourceInfo = {
@@ -46,4 +50,7 @@ class MLSQLWholeBinary(override val uid: String) extends MLSQLBaseFileSource wit
   override def fullFormat: String = "org.apache.spark.sql.execution.datasources.binary.WholeBinaryFileFormat"
 
   override def shortFormat: String = "wholeBinary"
+
+  final val contentColumn: Param[String] = new Param[String](this, "contentColumn", "for save mode")
+  final val fileName: Param[String] = new Param[String](this, "fileName", "for save mode")
 }
